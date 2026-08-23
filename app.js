@@ -1,6 +1,10 @@
-/* Bootstrap keeps the tested simulator core unchanged and layers the FortiOS log UI enhancement after it. */
+/* Bootstrap keeps the tested simulator core unchanged and layers FortiOS feature modules after it. */
 document.write('<script src="app-core.js"></script>');
 document.write('<script src="logs-enhancement.js"></script>');
+document.write('<script src="policy-state-nav.js"></script>');
+document.write('<script src="policy-firewall.js"></script>');
+document.write('<script src="policy-objects.js"></script>');
+document.write('<script src="policy-engine.js"></script>');
 
 document.addEventListener('DOMContentLoaded', () => {
   const groups = [...document.querySelectorAll('#sidebar-nav .nav-group')];
