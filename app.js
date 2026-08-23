@@ -7,6 +7,7 @@ document.write('<script src="policy-objects.js"></script>');
 document.write('<script src="policy-engine.js"></script>');
 document.write('<script src="routes-enhancement.js"></script>');
 document.write('<script src="vlan-enhancement.js"></script>');
+document.write('<script src="vpn-enhancement.js"></script>');
 
 document.addEventListener('DOMContentLoaded', () => {
   const groups = [...document.querySelectorAll('#sidebar-nav .nav-group')];
