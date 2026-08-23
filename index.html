@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FortiGate Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body id="app-body">
+  <div id="app-shell">
+    <aside id="sidebar" aria-label="Main navigation">
+      <div id="brand-row">
+        <div id="brand-logo" aria-hidden="true">▦</div>
+        <div id="brand-title">FortiGate-Simulator</div>
+      </div>
+
+      <nav id="sidebar-nav">
+        <button id="nav-dashboard" class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">◉</span><span>Dashboard</span>
+        </button>
+
+        <div id="network-group" class="nav-group open">
+          <button id="nav-network" class="nav-item nav-parent" data-toggle="network-subnav">
+            <span class="nav-icon">✥</span><span>Network</span><span class="nav-chevron">⌄</span>
+          </button>
+          <div id="network-subnav" class="subnav">
+            <button id="nav-interfaces" class="subnav-item" data-view="interfaces">Interfaces</button>
+            <button id="nav-dns" class="subnav-item" data-view="placeholder" data-title="DNS">DNS</button>
+            <button id="nav-packet-capture" class="subnav-item" data-view="placeholder" data-title="Packet Capture">Packet Capture</button>
+            <button id="nav-sdwan" class="subnav-item" data-view="placeholder" data-title="SD-WAN">SD-WAN</button>
+            <button id="nav-static-routes" class="subnav-item" data-view="static-routes">Static Routes</button>
+          </div>
+        </div>
+
+        <button id="nav-policy" class="nav-item" data-view="policies">
+          <span class="nav-icon">▣</span><span>Policy & Objects</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-security" class="nav-item" data-view="placeholder" data-title="Security Profiles">
+          <span class="nav-icon">▰</span><span>Security Profiles</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-vpn" class="nav-item" data-view="placeholder" data-title="VPN">
+          <span class="nav-icon">▱</span><span>VPN</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-users" class="nav-item" data-view="placeholder" data-title="User & Authentication">
+          <span class="nav-icon">♟</span><span>User & Authentication</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-wifi" class="nav-item" data-view="placeholder" data-title="WiFi & Switch Controller">
+          <span class="nav-icon">⌁</span><span>WiFi & Switch Controller</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-system" class="nav-item" data-view="placeholder" data-title="System">
+          <span class="nav-icon">⚙</span><span>System</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-fabric" class="nav-item" data-view="placeholder" data-title="Security Fabric">
+          <span class="nav-icon">※</span><span>Security Fabric</span><span class="nav-chevron">›</span>
+        </button>
+        <button id="nav-logs" class="nav-item" data-view="logs">
+          <span class="nav-icon">▥</span><span>Log & Report</span><span class="nav-chevron">›</span>
+        </button>
+      </nav>
+
+      <div id="sidebar-footer">
+        <div id="fortinet-wordmark">FORTINET</div>
+        <div id="sim-version">v7.0.10 (Simulator)</div>
+      </div>
+    </aside>
+
+    <div id="main-column">
+      <header id="topbar">
+        <button id="sidebar-toggle" class="topbar-icon" aria-label="Toggle sidebar">☰</button>
+        <button id="search-button" class="topbar-icon" aria-label="Search">⌕</button>
+        <div id="topbar-spacer"></div>
+        <button id="cli-open-button" class="topbar-icon" aria-label="Open CLI">&gt;_</button>
+        <button id="help-button" class="topbar-icon" aria-label="Help">?</button>
+        <button id="notification-button" class="topbar-icon" aria-label="Notifications">♢</button>
+        <div id="admin-chip">● <span>admin</span> ▾</div>
+      </header>
+
+      <main id="main-content">
+        <section id="view-dashboard" class="app-view active-view">
+          <div id="dashboard-header" class="page-heading-row">
+            <h1 id="dashboard-title">Dashboard</h1>
+          </div>
+
+          <div id="dashboard-grid">
+            <article id="system-card" class="panel-card">
+              <div id="system-card-title" class="panel-title">System Information</div>
+              <div id="system-card-body" class="info-grid">
+                <span>Hostname</span><strong id="sys-hostname">FG-SIM-01</strong>
+                <span>Serial Number</span><strong>FGT60E-SIMULATOR</strong>
+                <span>Firmware</span><strong>v7.0.10 (Simulator)</strong>
+                <span>Mode</span><strong>NAT</strong>
+                <span>Administrator</span><strong>admin</strong>
+              </div>
+            </article>
+
+            <article id="resource-card" class="panel-card">
+              <div id="resource-card-title" class="panel-title">Resource Usage</div>
+              <div id="resource-meters">
+                <div class="meter-block"><div class="meter-value" id="cpu-value">12%</div><div class="meter-label">CPU</div></div>
+                <div class="meter-block"><div class="meter-value" id="memory-value">28%</div><div class="meter-label">Memory</div></div>
+                <div class="meter-block"><div class="meter-value" id="session-value">156</div><div class="meter-label">Sessions</div></div>
+              </div>
+            </article>
+
+            <article id="topology-card" class="panel-card">
+              <div id="topology-card-title" class="panel-title">Network Topology (Simulator)</div>
+              <div id="topology-body">
+                <div id="topology-internet">Internet</div>
+                <div id="topology-line-1" class="topology-line vertical"></div>
+                <div id="topology-firewall">▦<span>FG-SIM-01</span></div>
+                <div id="topology-line-2" class="topology-line horizontal"></div>
+                <div id="topology-nodes">
+                  <div class="topology-node"><strong>wan</strong><span id="topology-wan-ip">192.168.80.49</span></div>
+                  <div class="topology-node"><strong>lan</strong><span id="topology-lan-ip">192.168.1.99</span></div>
+                  <div class="topology-node"><strong>dmz</strong><span id="topology-dmz-ip">10.10.10.1</span></div>
+                </div>
+              </div>
+            </article>
+
+            <article id="interfaces-summary-card" class="panel-card wide-card">
+              <div id="interfaces-summary-title" class="panel-title">Interfaces</div>
+              <div id="interfaces-summary-body" class="table-wrap"></div>
+              <button id="view-all-interfaces" class="text-link" data-view="interfaces">View All Interfaces</button>
+            </article>
+
+            <article id="policy-summary-card" class="panel-card wide-card">
+              <div id="policy-summary-title" class="panel-title">Firewall Policies</div>
+              <div id="policy-summary-body" class="table-wrap"></div>
+              <button id="view-all-policies" class="text-link" data-view="policies">View All Policies</button>
+            </article>
+
+            <article id="log-summary-card" class="panel-card">
+              <div id="log-summary-title" class="panel-title">Logs (Forward Traffic)</div>
+              <div id="log-summary-body" class="table-wrap"></div>
+              <button id="view-all-logs" class="text-link" data-view="logs">View More Logs</button>
+            </article>
+          </div>
+        </section>
+
+        <section id="view-interfaces" class="app-view">
+          <div id="interfaces-header" class="page-heading-row">
+            <h1 id="interfaces-title">Interfaces</h1>
+          </div>
+
+          <div id="interface-device-strip" class="device-strip">
+            <div id="device-strip-model">
+              <div id="device-mini-logo">▦</div>
+              <div>
+                <strong>FortiWiFi 60E-DSL</strong>
+                <div class="muted">INTERNAL</div>
+              </div>
+            </div>
+            <div id="port-lights" aria-label="Port status">
+              <span class="port-light on">1</span>
+              <span class="port-light on">2</span>
+              <span class="port-light">3</span>
+              <span class="port-light">4</span>
+              <span class="port-light">5</span>
+              <span class="port-light">6</span>
+              <span class="port-light">7</span>
+              <span class="port-light">DMZ</span>
+              <span class="port-light on">WAN</span>
+            </div>
+          </div>
+
+          <div id="interfaces-toolbar" class="toolbar">
+            <button id="interface-create-button" class="btn-primary">＋ Create New ▾</button>
+            <button id="interface-edit-button" class="btn-secondary" disabled>✎ Edit</button>
+            <button id="interface-delete-button" class="btn-secondary" disabled>▱ Delete</button>
+            <div id="toolbar-grow"></div>
+            <input id="interface-search" class="search-input" type="search" placeholder="Search" />
+          </div>
+
+          <div id="interfaces-table-wrap" class="table-wrap full-table-wrap">
+            <table id="interfaces-table" class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Members</th>
+                  <th>IP/Netmask</th>
+                  <th>Administrative Access</th>
+                  <th>DHCP Clients</th>
+                  <th>DHCP Ranges</th>
+                  <th>Ref.</th>
+                </tr>
+              </thead>
+              <tbody id="interfaces-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-static-routes" class="app-view">
+          <div id="routes-header" class="page-heading-row"><h1 id="routes-title">Static Routes</h1></div>
+          <div id="routes-toolbar" class="toolbar">
+            <button id="route-create-button" class="btn-primary">＋ Create New</button>
+            <button id="route-delete-button" class="btn-secondary" disabled>▱ Delete</button>
+          </div>
+          <div id="routes-table-wrap" class="table-wrap full-table-wrap">
+            <table id="routes-table" class="data-table">
+              <thead>
+                <tr><th>Destination</th><th>Gateway</th><th>Interface</th><th>Distance</th><th>Status</th></tr>
+              </thead>
+              <tbody id="routes-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-policies" class="app-view">
+          <div id="policies-header" class="page-heading-row"><h1 id="policies-title">Firewall Policy</h1></div>
+          <div id="policies-toolbar" class="toolbar">
+            <button id="policy-create-button" class="btn-primary">＋ Create New</button>
+            <button id="policy-delete-button" class="btn-secondary" disabled>▱ Delete</button>
+            <button id="test-traffic-button" class="btn-secondary">▶ Test Traffic</button>
+          </div>
+          <div id="policies-table-wrap" class="table-wrap full-table-wrap">
+            <table id="policies-table" class="data-table">
+              <thead>
+                <tr><th>ID</th><th>Name</th><th>From</th><th>To</th><th>Source</th><th>Destination</th><th>Service</th><th>Action</th><th>NAT</th></tr>
+              </thead>
+              <tbody id="policies-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-logs" class="app-view">
+          <div id="logs-header" class="page-heading-row"><h1 id="logs-title">Forward Traffic</h1></div>
+          <div id="logs-toolbar" class="toolbar">
+            <button id="generate-log-button" class="btn-primary">▶ Generate Test Traffic</button>
+            <button id="clear-logs-button" class="btn-secondary">Clear Logs</button>
+          </div>
+          <div id="logs-table-wrap" class="table-wrap full-table-wrap">
+            <table id="logs-table" class="data-table">
+              <thead>
+                <tr><th>Time</th><th>Action</th><th>Policy</th><th>Source</th><th>Destination</th><th>Service</th><th>Reason</th></tr>
+              </thead>
+              <tbody id="logs-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-placeholder" class="app-view">
+          <div id="placeholder-card" class="placeholder-card">
+            <h1 id="placeholder-title">Module</h1>
+            <p id="placeholder-text">This module will be added in the next simulator stage.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer id="statusbar">
+        <span>Security Rating: <strong>Excellent</strong></span>
+        <span id="status-sessions">Sessions: 156</span>
+        <span id="status-cpu">CPU: 12%</span>
+        <span id="status-memory">Memory: 28%</span>
+        <span>HA: Standalone</span>
+      </footer>
+    </div>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div id="modal-panel" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div id="modal-header" class="modal-header">
+        <h2 id="modal-title">Modal</h2>
+        <button id="modal-close-button" class="btn-icon" aria-label="Close">×</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <div id="cli-panel" class="cli-panel" hidden>
+    <div id="cli-header">
+      <strong>CLI Console — FG-SIM-01</strong>
+      <button id="cli-close-button" class="btn-icon">×</button>
+    </div>
+    <pre id="cli-output">FG-SIM-01 # </pre>
+    <div id="cli-input-row">
+      <span>FG-SIM-01 #</span>
+      <input id="cli-input" autocomplete="off" spellcheck="false" />
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
