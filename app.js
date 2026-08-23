@@ -5,6 +5,7 @@ document.write('<script src="policy-state-nav.js"></script>');
 document.write('<script src="policy-firewall.js"></script>');
 document.write('<script src="policy-objects.js"></script>');
 document.write('<script src="policy-engine.js"></script>');
+document.write('<script src="routes-enhancement.js"></script>');
 
 document.addEventListener('DOMContentLoaded', () => {
   const groups = [...document.querySelectorAll('#sidebar-nav .nav-group')];
