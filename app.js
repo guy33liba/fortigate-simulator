@@ -12,6 +12,25 @@ const baseInterface = {
   dynamicStatus:"Static", acquiredGateway:"", acquiredDns:[], ref:0, enabled:true, linkStatus:"Up"
 };
 
+const baseDns = {
+  mode:"FortiGuard",
+  primary:"96.45.45.45",
+  secondary:"96.45.46.46",
+  protocols:["TLS"],
+  serverHostname:"globalsdns.fortinet.net",
+  serverSelectMethod:"Least RTT",
+  interfaceSelectMethod:"Auto",
+  interface:"wan",
+  sourceIp:"0.0.0.0",
+  timeout:5,
+  retry:2,
+  cacheLimit:5000,
+  cacheTtl:1800,
+  cacheNotFound:false,
+  cache:{},
+  queryHistory:[]
+};
+
 const defaultState = {
   interfaces:[
     {...baseInterface,id:"if-fortilink",group:"802.3ad Aggregate",name:"fortilink",type:"802.3ad Aggregate",ip:"10.255.1.1",mask:"255.255.255.0",access:["PING","Security Fabric Connection"],dhcpEnabled:true,dhcpStart:"10.255.1.2",dhcpEnd:"10.255.1.254",dhcpRange:"10.255.1.2-10.255.1.254",dhcpGateway:"10.255.1.1",ref:2},
@@ -36,7 +55,8 @@ const defaultState = {
     {id:2,uid:"pol-2",name:"LAN-to-DMZ",from:"lan",to:"dmz",source:"LAN_Subnet",destination:"DMZ_Subnet",service:"ALL",action:"ACCEPT",nat:false,enabled:true},
     {id:3,uid:"pol-3",name:"Deny-ALL",from:"all",to:"all",source:"all",destination:"all",service:"ALL",action:"DENY",nat:false,enabled:true}
   ],
-  logs:[{id:uid(),time:new Date().toLocaleTimeString(),action:"ACCEPT",policy:1,source:"192.168.1.50",destination:"8.8.8.8",service:"PING",reason:"Policy matched; NAT applied"}]
+  logs:[{id:uid(),time:new Date().toLocaleTimeString(),action:"ACCEPT",policy:1,source:"192.168.1.50",destination:"8.8.8.8",service:"PING",reason:"Policy matched; NAT applied"}],
+  dns:structuredClone(baseDns)
 };
 
 let state = loadState();
@@ -44,7 +64,9 @@ let selectedInterfaceId=null, selectedRouteId=null, selectedPolicyUid=null, edit
 
 function init(){
   ensureRuntimeControls();
-  bindNavigation(); bindInterfaces(); bindRoutes(); bindPolicies(); bindLogs(); bindModal(); bindCli();
+  ensureDnsView();
+  ensureDnsState();
+  bindNavigation(); bindInterfaces(); bindDns(); bindRoutes(); bindPolicies(); bindLogs(); bindModal(); bindCli();
   $("sidebar-toggle")?.addEventListener("click",()=>$("sidebar").classList.toggle("mobile-open"));
   reconcileAllGeneratedRoutes();
   renderAll();
@@ -78,6 +100,110 @@ function ensureRuntimeControls(){
   }
 }
 
+function ensureDnsView(){
+  const nav=$("nav-dns");
+  if(nav){nav.dataset.view="dns";delete nav.dataset.title;}
+  if($("view-dns")||!$("main-content"))return;
+  const section=document.createElement("section");
+  section.id="view-dns"; section.className="app-view";
+  section.innerHTML=`
+    <div id="dns-header" class="page-heading-row"><h1 id="dns-title">DNS</h1></div>
+    <form id="dns-form" novalidate>
+      <section id="dns-server-section" class="forti-form-section">
+        <h2 id="dns-server-title">DNS Servers</h2>
+        <div id="dns-server-fields" class="forti-form-body">
+          <div id="field-dns-mode" class="forti-field-row">
+            <label id="label-dns-mode">DNS servers</label>
+            <div id="control-dns-mode" class="forti-radio-row">
+              <label id="dns-mode-fortiguard-label"><input id="dns-mode-fortiguard" type="radio" name="dns-mode" value="FortiGuard" /> Use FortiGuard Servers</label>
+              <label id="dns-mode-custom-label"><input id="dns-mode-custom" type="radio" name="dns-mode" value="Custom" /> Specify</label>
+            </div>
+          </div>
+          <div id="field-dns-primary" class="forti-field-row">
+            <label id="label-dns-primary" for="dns-primary">Primary DNS server</label>
+            <div id="control-dns-primary"><input id="dns-primary" type="text" inputmode="decimal" /></div>
+          </div>
+          <div id="field-dns-secondary" class="forti-field-row">
+            <label id="label-dns-secondary" for="dns-secondary">Secondary DNS server</label>
+            <div id="control-dns-secondary"><input id="dns-secondary" type="text" inputmode="decimal" /></div>
+          </div>
+          <div id="field-dns-protocols" class="forti-field-row">
+            <label id="label-dns-protocols">DNS Protocols</label>
+            <div id="control-dns-protocols" class="forti-access-grid">
+              <label id="dns-protocol-cleartext-label"><input id="dns-protocol-cleartext" type="checkbox" value="Cleartext" /> Cleartext (53)</label>
+              <label id="dns-protocol-tls-label"><input id="dns-protocol-tls" type="checkbox" value="TLS" /> TLS (853)</label>
+              <label id="dns-protocol-https-label"><input id="dns-protocol-https" type="checkbox" value="HTTPS" /> HTTPS (443)</label>
+            </div>
+          </div>
+          <div id="field-dns-hostname" class="forti-field-row">
+            <label id="label-dns-hostname" for="dns-hostname">Server hostname</label>
+            <div id="control-dns-hostname"><input id="dns-hostname" type="text" placeholder="dns.example.com" /></div>
+          </div>
+          <div id="field-dns-server-select" class="forti-field-row">
+            <label id="label-dns-server-select" for="dns-server-select">Server select method</label>
+            <div id="control-dns-server-select"><select id="dns-server-select"><option>Least RTT</option><option>Failover</option></select></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="dns-routing-section" class="forti-form-section">
+        <h2 id="dns-routing-title">Routing</h2>
+        <div id="dns-routing-fields" class="forti-form-body">
+          <div id="field-dns-interface-method" class="forti-field-row">
+            <label id="label-dns-interface-method" for="dns-interface-method">Interface select method</label>
+            <div id="control-dns-interface-method"><select id="dns-interface-method"><option>Auto</option><option>SD-WAN</option><option>Specify</option></select></div>
+          </div>
+          <div id="field-dns-interface" class="forti-field-row" hidden>
+            <label id="label-dns-interface" for="dns-interface">Interface</label>
+            <div id="control-dns-interface"><select id="dns-interface"></select></div>
+          </div>
+          <div id="field-dns-source-ip" class="forti-field-row">
+            <label id="label-dns-source-ip" for="dns-source-ip">Source IP</label>
+            <div id="control-dns-source-ip"><input id="dns-source-ip" type="text" value="0.0.0.0" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="dns-cache-section" class="forti-form-section">
+        <h2 id="dns-cache-title">DNS Cache</h2>
+        <div id="dns-cache-fields" class="forti-form-body">
+          <div id="field-dns-timeout" class="forti-field-row"><label id="label-dns-timeout" for="dns-timeout">Timeout</label><div id="control-dns-timeout" class="inline-controls"><input id="dns-timeout" type="number" min="1" max="10" /><span>seconds</span></div></div>
+          <div id="field-dns-retry" class="forti-field-row"><label id="label-dns-retry" for="dns-retry">Retry</label><div id="control-dns-retry"><input id="dns-retry" type="number" min="0" max="5" /></div></div>
+          <div id="field-dns-cache-limit" class="forti-field-row"><label id="label-dns-cache-limit" for="dns-cache-limit">Cache limit</label><div id="control-dns-cache-limit"><input id="dns-cache-limit" type="number" min="0" /></div></div>
+          <div id="field-dns-cache-ttl" class="forti-field-row"><label id="label-dns-cache-ttl" for="dns-cache-ttl">Cache TTL</label><div id="control-dns-cache-ttl" class="inline-controls"><input id="dns-cache-ttl" type="number" min="60" max="86400" /><span>seconds</span></div></div>
+          <div id="field-dns-cache-notfound" class="forti-field-row"><label id="label-dns-cache-notfound">Cache NOT FOUND responses</label><div id="control-dns-cache-notfound"><label id="dns-cache-notfound-switch" class="forti-switch"><input id="dns-cache-notfound" type="checkbox" /><span></span></label></div></div>
+        </div>
+      </section>
+
+      <div id="dns-form-errors" class="status-deny" role="alert" aria-live="polite"></div>
+      <div id="dns-actions" class="toolbar"><button id="dns-apply-button" type="submit" class="btn-primary">Apply</button><button id="dns-reset-button" type="button" class="btn-secondary">Reset Fields</button></div>
+    </form>
+
+    <section id="dns-test-section" class="forti-form-section">
+      <h2 id="dns-test-title">DNS Test</h2>
+      <div id="dns-test-fields" class="forti-form-body">
+        <div id="field-dns-test-name" class="forti-field-row"><label id="label-dns-test-name" for="dns-test-name">Domain</label><div id="control-dns-test-name" class="inline-controls"><input id="dns-test-name" type="text" value="www.example.com" /><button id="dns-test-button" type="button" class="btn-primary">Resolve</button><button id="dns-clear-cache-button" type="button" class="btn-secondary">Clear Cache</button></div></div>
+        <div id="field-dns-test-result" class="forti-field-row"><label id="label-dns-test-result">Result</label><div id="dns-test-result" class="muted">Ready.</div></div>
+      </div>
+    </section>
+
+    <div id="dns-status-wrap" class="table-wrap full-table-wrap">
+      <table id="dns-status-table" class="data-table"><thead><tr><th>Server</th><th>Address</th><th>Protocol</th><th>Route</th><th>Status</th><th>RTT</th></tr></thead><tbody id="dns-status-body"></tbody></table>
+    </div>
+  `;
+  const anchor=$("view-static-routes");
+  if(anchor) anchor.before(section); else $("main-content").append(section);
+}
+
+function ensureDnsState(){state.dns=normalizeDns(state.dns);}
+function normalizeDns(dns){
+  const x={...baseDns,...(dns||{})};
+  x.protocols=Array.isArray(x.protocols)&&x.protocols.length?x.protocols:["Cleartext"];
+  x.cache=x.cache&&typeof x.cache==="object"&&!Array.isArray(x.cache)?x.cache:{};
+  x.queryHistory=Array.isArray(x.queryHistory)?x.queryHistory:[];
+  return x;
+}
+
 function bindNavigation(){
   document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>{
     if(b.dataset.view==="placeholder") $("placeholder-title").textContent=b.dataset.title||"Module";
@@ -91,6 +217,7 @@ function showView(name){
   document.querySelectorAll(".nav-item,.subnav-item").forEach(v=>v.classList.remove("active"));
   const target=$(`view-${name}`)||$("view-placeholder"); target?.classList.add("active-view");
   const nav=document.querySelector(`[data-view="${name}"]`); if(nav) nav.classList.add("active");
+  if(name==="dns")renderDns();
   if(innerWidth<=760) $("sidebar")?.classList.remove("mobile-open");
 }
 
@@ -171,7 +298,7 @@ function newInterfaceDraft(type){
 function closeInterfaceEditor(){editingInterfaceId=null;showView("interfaces");}
 function populateParents(selected=""){$("editor-parent").innerHTML=state.interfaces.filter(i=>i.type!=="VLAN"&&i.type!=="Loopback Interface").map(i=>`<option ${i.name===selected?"selected":""}>${esc(i.name)}</option>`).join("");}
 function currentAddressMode(){return document.querySelector('input[name="editor-address-mode"]:checked')?.value||"Manual";}
-function setHidden(id,val){const el=$(id); if(el)el.hidden=val;}
+function setHidden(id,val){const el=$(id);if(!el)return;el.hidden=val;el.style.display=val?"none":"";}
 
 function updateEditorVisibility(){
   const type=$("editor-type").value, role=$("editor-role").value, mode=currentAddressMode(), vlan=type==="VLAN", wan=role==="WAN", manual=mode==="Manual";
@@ -358,6 +485,161 @@ function allocateDhcpLease(i){
 }
 function hex2(n){return Number(n).toString(16).padStart(2,"0");}
 
+function bindDns(){
+  $("dns-form")?.addEventListener("submit",e=>{e.preventDefault();saveDnsSettings();});
+  $("dns-reset-button")?.addEventListener("click",renderDns);
+  document.querySelectorAll('input[name="dns-mode"]').forEach(r=>r.addEventListener("change",updateDnsVisibility));
+  ["dns-protocol-cleartext","dns-protocol-tls","dns-protocol-https","dns-interface-method"].forEach(id=>$(id)?.addEventListener("change",updateDnsVisibility));
+  $("dns-test-button")?.addEventListener("click",runDnsTest);
+  $("dns-clear-cache-button")?.addEventListener("click",clearDnsCache);
+}
+
+function renderDns(){
+  if(!$("view-dns"))return;
+  ensureDnsState();
+  const d=state.dns;
+  document.querySelectorAll('input[name="dns-mode"]').forEach(r=>r.checked=r.value===d.mode);
+  $("dns-primary").value=d.primary; $("dns-secondary").value=d.secondary;
+  $("dns-protocol-cleartext").checked=d.protocols.includes("Cleartext");
+  $("dns-protocol-tls").checked=d.protocols.includes("TLS");
+  $("dns-protocol-https").checked=d.protocols.includes("HTTPS");
+  $("dns-hostname").value=d.serverHostname||""; $("dns-server-select").value=d.serverSelectMethod;
+  $("dns-interface-method").value=d.interfaceSelectMethod; populateDnsInterfaces(d.interface);
+  $("dns-source-ip").value=d.sourceIp; $("dns-timeout").value=d.timeout; $("dns-retry").value=d.retry;
+  $("dns-cache-limit").value=d.cacheLimit; $("dns-cache-ttl").value=d.cacheTtl; $("dns-cache-notfound").checked=d.cacheNotFound;
+  $("dns-form-errors").textContent="";
+  updateDnsVisibility(); renderDnsStatus();
+}
+
+function populateDnsInterfaces(selected=""){
+  if(!$("dns-interface"))return;
+  $("dns-interface").innerHTML=state.interfaces.map(i=>`<option value="${esc(i.name)}" ${i.name===selected?"selected":""}>${esc(i.name)}</option>`).join("");
+  if(selected&&findByName(selected))$("dns-interface").value=selected;
+}
+
+function currentDnsMode(){return document.querySelector('input[name="dns-mode"]:checked')?.value||"FortiGuard";}
+function selectedDnsProtocols(){return ["Cleartext","TLS","HTTPS"].filter(p=>$(p==="Cleartext"?"dns-protocol-cleartext":p==="TLS"?"dns-protocol-tls":"dns-protocol-https")?.checked);}
+
+function updateDnsVisibility(){
+  if(!$("dns-primary"))return;
+  const fortiguard=currentDnsMode()==="FortiGuard";
+  if(fortiguard){
+    $("dns-primary").value="96.45.45.45"; $("dns-secondary").value="96.45.46.46";
+    $("dns-protocol-cleartext").checked=false; $("dns-protocol-tls").checked=true; $("dns-protocol-https").checked=false;
+    $("dns-hostname").value="globalsdns.fortinet.net";
+  }
+  $("dns-primary").disabled=fortiguard; $("dns-secondary").disabled=fortiguard;
+  $("dns-protocol-cleartext").disabled=fortiguard; $("dns-protocol-tls").disabled=fortiguard; $("dns-protocol-https").disabled=fortiguard;
+  $("dns-hostname").disabled=fortiguard;
+  const secure=selectedDnsProtocols().some(p=>p==="TLS"||p==="HTTPS");
+  setHidden("field-dns-hostname",!secure);
+  setHidden("field-dns-interface",$("dns-interface-method").value!=="Specify");
+}
+
+function readDnsForm(){
+  const mode=currentDnsMode(), fortiguard=mode==="FortiGuard";
+  return normalizeDns({
+    ...state.dns,
+    mode,
+    primary:fortiguard?"96.45.45.45":$("dns-primary").value.trim(),
+    secondary:fortiguard?"96.45.46.46":$("dns-secondary").value.trim(),
+    protocols:fortiguard?["TLS"]:selectedDnsProtocols(),
+    serverHostname:fortiguard?"globalsdns.fortinet.net":$("dns-hostname").value.trim(),
+    serverSelectMethod:$("dns-server-select").value,
+    interfaceSelectMethod:$("dns-interface-method").value,
+    interface:$("dns-interface")?.value||"wan",
+    sourceIp:$("dns-source-ip").value.trim()||"0.0.0.0",
+    timeout:Number($("dns-timeout").value), retry:Number($("dns-retry").value),
+    cacheLimit:Number($("dns-cache-limit").value), cacheTtl:Number($("dns-cache-ttl").value),
+    cacheNotFound:$("dns-cache-notfound").checked
+  });
+}
+
+function validateDns(d){
+  const e=[];
+  if(!isIPv4(d.primary))e.push("Primary DNS server must be a valid IPv4 address");
+  if(d.secondary&&!isIPv4(d.secondary))e.push("Secondary DNS server must be a valid IPv4 address");
+  if(!d.protocols.length)e.push("Select at least one DNS protocol");
+  if((d.protocols.includes("TLS")||d.protocols.includes("HTTPS"))&&!d.serverHostname.trim())e.push("Server hostname is required for TLS/HTTPS simulation");
+  if(d.timeout<1||d.timeout>10)e.push("Timeout must be 1-10 seconds");
+  if(d.retry<0||d.retry>5)e.push("Retry must be 0-5");
+  if(d.cacheLimit<0||!Number.isFinite(d.cacheLimit))e.push("Cache limit must be 0 or higher");
+  if(d.cacheTtl<60||d.cacheTtl>86400)e.push("Cache TTL must be 60-86400 seconds");
+  if(!isIPv4(d.sourceIp))e.push("Source IP must be a valid IPv4 address");
+  if(d.interfaceSelectMethod==="Specify"&&!findByName(d.interface))e.push("Select a valid outgoing interface");
+  return e;
+}
+
+function saveDnsSettings(){
+  const d=readDnsForm(), errors=validateDns(d);
+  if(errors.length){$("dns-form-errors").textContent=errors.join(" • ");return;}
+  state.dns=d; saveState(); renderDns();
+  $("dns-test-result").textContent="DNS settings applied.";
+}
+
+function dnsServersInUse(d=state.dns){
+  return [{label:"Primary",ip:d.primary},{label:"Secondary",ip:d.secondary}].filter(s=>isIPv4(s.ip)&&s.ip!=="0.0.0.0");
+}
+
+function dnsRouteStatus(server,d=state.dns){
+  const route=findBestRoute(server.ip);
+  if(!route)return {ok:false,route:null,reason:"No route"};
+  if(d.interfaceSelectMethod==="Specify"&&route.interface!==d.interface)return {ok:false,route,reason:`Route uses ${route.interface}, not ${d.interface}`};
+  return {ok:true,route,reason:"Reachable"};
+}
+
+function simulatedDnsAnswer(name){
+  const known={"www.example.com":"93.184.216.34","example.com":"93.184.216.34"};
+  if(known[name])return known[name];
+  const h=hashText(name);return `203.0.113.${(h%253)+1}`;
+}
+
+function resolveDnsName(name,options={record:true}){
+  ensureDnsState();
+  const d=state.dns, domain=String(name||"").trim().toLowerCase().replace(/\.$/,"");
+  if(!domain)return {ok:false,reason:"Domain is required"};
+  if(isIPv4(domain))return {ok:true,name:domain,ip:domain,server:"Local",protocol:"IP",rtt:0,cached:false};
+  const cached=d.cache[domain];
+  if(cached&&cached.expiresAt>Date.now())return {ok:true,name:domain,ip:cached.ip,server:"Cache",protocol:"Cache",rtt:0,cached:true};
+  if(cached)delete d.cache[domain];
+  const servers=dnsServersInUse(d);
+  if(!servers.length)return {ok:false,reason:"No DNS servers configured"};
+  const ordered=d.serverSelectMethod==="Failover"?servers:servers.slice().sort((a,b)=>simulatedRtt(a.ip)-simulatedRtt(b.ip));
+  const protocol=d.protocols[0]||"Cleartext";
+  for(const server of ordered){
+    const reach=dnsRouteStatus(server,d); if(!reach.ok)continue;
+    const ip=simulatedDnsAnswer(domain), rtt=simulatedRtt(server.ip);
+    const limit=Math.max(0,Number(d.cacheLimit)||0);
+    if(limit>0){
+      const entries=Object.keys(d.cache); if(entries.length>=limit)delete d.cache[entries[0]];
+      d.cache[domain]={ip,expiresAt:Date.now()+d.cacheTtl*1000};
+    }
+    const result={ok:true,name:domain,ip,server:server.ip,serverLabel:server.label,protocol,rtt,cached:false,route:reach.route};
+    if(options.record!==false){d.queryHistory.push({...result,time:Date.now()});d.queryHistory=d.queryHistory.slice(-20);saveState();}
+    return result;
+  }
+  const result={ok:false,reason:"Configured DNS servers are not reachable through the routing table"};
+  if(options.record!==false){d.queryHistory.push({...result,name:domain,time:Date.now()});d.queryHistory=d.queryHistory.slice(-20);saveState();}
+  return result;
+}
+
+function simulatedRtt(ip){return 8+(hashText(ip)%38);}
+function runDnsTest(){
+  const domain=$("dns-test-name").value.trim(), result=resolveDnsName(domain);
+  if(result.ok)$("dns-test-result").textContent=`RESOLVED · ${result.name} → ${result.ip} · ${result.cached?"Cache":`${result.serverLabel} ${result.server}`} · ${result.protocol} · ${result.rtt} ms`;
+  else $("dns-test-result").textContent=`FAILED · ${result.reason}`;
+  renderDnsStatus();
+}
+function clearDnsCache(){ensureDnsState();state.dns.cache={};saveState();if($("dns-test-result"))$("dns-test-result").textContent="DNS cache cleared.";renderDnsStatus();}
+function renderDnsStatus(){
+  const body=$("dns-status-body");if(!body)return;body.innerHTML="";
+  const d=state.dns, protocol=d.protocols.join(", ")||"-";
+  dnsServersInUse(d).forEach(server=>{
+    const reach=dnsRouteStatus(server,d),tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(server.label)}</td><td>${esc(server.ip)}</td><td>${esc(protocol)}</td><td>${reach.route?`${esc(reach.route.destination)} via ${esc(reach.route.interface)}`:"-"}</td><td class="${reach.ok?"status-enabled":"status-down"}">${reach.ok?"● Reachable":"● Unreachable"}</td><td>${reach.ok?`${simulatedRtt(server.ip)} ms`:"-"}</td>`;body.append(tr);
+  });
+}
+
 function bindRoutes(){$("route-create-button")?.addEventListener("click",openRouteModal);$("route-delete-button")?.addEventListener("click",deleteRoute);}
 function renderRoutes(){const b=$("routes-table-body");if(!b)return;b.innerHTML="";state.routes.slice().sort(routeSort).forEach(r=>{const tr=document.createElement("tr");if(r.id===selectedRouteId)tr.classList.add("selected");const code=r.connected?"C":r.dynamic?"D":"S", detail=r.type&&r.type!=="static"?` <span class="muted">(${esc(r.type)})</span>`:"";tr.innerHTML=`<td><strong>${code}</strong> ${esc(r.destination)}${detail}</td><td>${esc(r.gateway)}</td><td>▣ ${esc(r.interface)}</td><td>${r.distance}</td><td class="${r.enabled?"status-enabled":"status-down"}">${r.enabled?"● Enabled":"● Disabled"}</td>`;tr.addEventListener("click",()=>{selectedRouteId=r.id;renderRoutes();updateButtons();});b.append(tr);});updateButtons();}
 function routeSort(a,b){const pa=Number(a.destination.split("/")[1]||0),pb=Number(b.destination.split("/")[1]||0);return pb-pa||a.distance-b.distance||a.interface.localeCompare(b.interface);}
@@ -396,7 +678,7 @@ function isRouteUsable(r){const i=findByName(r.interface);return !!i&&isInterfac
 function evaluateLocalPing(ip){const route=findBestRoute(ip);if(!route)return{action:"DENY",reason:"No route to destination"};const outIf=findByName(route.interface);if(!isInterfaceOperational(outIf))return{action:"DENY",reason:`Interface ${route.interface} is down`};return{action:"ACCEPT",reason:`Route ${route.destination} via ${route.interface}`,outgoing:route.interface,source:outIf.ip};}
 
 function renderDashboard(){const mini=(h,rows)=>`<table class="data-table"><thead><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${esc(String(x))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;if($("interfaces-summary-body"))$("interfaces-summary-body").innerHTML=mini(["Name","IP/Netmask","Access"],state.interfaces.slice(0,5).map(i=>[i.name,`${i.ip}/${i.mask}`,(i.access||[]).slice(0,3).join(" ")]));if($("policy-summary-body"))$("policy-summary-body").innerHTML=mini(["ID","Name","From","To","Action","NAT"],state.policies.slice(0,5).map(p=>[p.id,p.name,p.from,p.to,p.action,p.nat?"Yes":"No"]));if($("log-summary-body"))$("log-summary-body").innerHTML=mini(["Time","Action","Source","Destination"],[...state.logs].slice(-6).reverse().map(l=>[l.time,l.action,l.source,l.destination]));if($("topology-wan-ip"))$("topology-wan-ip").textContent=findByName("wan")?.ip||"—";if($("topology-lan-ip"))$("topology-lan-ip").textContent=findByName("lan")?.ip||"—";if($("topology-dmz-ip"))$("topology-dmz-ip").textContent=findByName("dmz")?.ip||"—";}
-function renderAll(){renderInterfaces();renderRoutes();renderPolicies();renderLogs();renderDashboard();}
+function renderAll(){renderInterfaces();renderDns();renderRoutes();renderPolicies();renderLogs();renderDashboard();}
 function updateButtons(){if($("interface-edit-button"))$("interface-edit-button").disabled=!selectedInterfaceId;if($("interface-delete-button"))$("interface-delete-button").disabled=!selectedInterfaceId;if($("interface-integrate-button"))$("interface-integrate-button").disabled=true;if($("route-delete-button"))$("route-delete-button").disabled=!selectedRouteId;if($("policy-delete-button"))$("policy-delete-button").disabled=!selectedPolicyUid;}
 
 function bindModal(){$("modal-close-button")?.addEventListener("click",closeModal);$("modal-backdrop")?.addEventListener("click",e=>{if(e.target===$("modal-backdrop"))closeModal();});document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();if($("cli-panel"))$("cli-panel").hidden=true;}});}
@@ -413,12 +695,16 @@ function runCli(c){
     cli("Physical interface status (simulated)");state.interfaces.filter(i=>i.type==="Physical Interface").forEach(i=>cli(`${i.name}: ${isInterfaceOperational(i)?"up":"down"} mode=${i.addressingMode.toLowerCase()} ip=${i.ip}/${i.mask}${i.addressingMode==="DHCP"?` dhcp=${i.dynamicStatus}`:""}${i.addressingMode==="PPPoE"?` pppoe=${i.pppoeStatus}`:""}`));
   }else if(n==="diagnose ip address list"){
     state.interfaces.filter(i=>isIPv4(i.ip)&&i.ip!=="0.0.0.0").forEach(i=>cli(`${i.name}: ${i.ip}/${maskToPrefix(i.mask)} (${i.addressingMode})`));
+  }else if(n==="show system dns"){
+    ensureDnsState();const d=state.dns;cli(`config system dns\n    set primary ${d.primary}\n    set secondary ${d.secondary}\n    set protocol ${d.protocols.map(p=>p==="Cleartext"?"cleartext":p==="TLS"?"dot":"doh").join(" ")}\n    set server-hostname \"${d.serverHostname}\"\n    set timeout ${d.timeout}\n    set retry ${d.retry}\n    set dns-cache-limit ${d.cacheLimit}\n    set dns-cache-ttl ${d.cacheTtl}\n    set interface-select-method ${d.interfaceSelectMethod.toLowerCase().replace("-","")}\nend`);
   }else if(n.startsWith("execute ping ")){
-    const ip=c.split(/\s+/).pop(),r=isIPv4(ip)?evaluateLocalPing(ip):{action:"DENY",reason:"Invalid IP address"};cli(r.action==="ACCEPT"?`PING ${ip}: 56 data bytes\n64 bytes from ${ip}: icmp_seq=0 ttl=117 time=12.4 ms\n--- ${ip} ping statistics ---\n1 packets transmitted, 1 packets received, 0% packet loss\nRoute: ${r.reason}`:`PING ${ip}: timeout\nReason: ${r.reason}`);
+    const target=c.split(/\s+/).pop();let ip=target,dnsResult=null;
+    if(!isIPv4(target)){dnsResult=resolveDnsName(target,{record:false});if(!dnsResult.ok){cli(`PING ${target}: DNS lookup failed\nReason: ${dnsResult.reason}`);cli("");return;}ip=dnsResult.ip;cli(`Resolving ${target} -> ${ip} via ${dnsResult.server}`);}
+    const r=evaluateLocalPing(ip);cli(r.action==="ACCEPT"?`PING ${target} (${ip}): 56 data bytes\n64 bytes from ${ip}: icmp_seq=0 ttl=117 time=12.4 ms\n--- ${target} ping statistics ---\n1 packets transmitted, 1 packets received, 0% packet loss\nRoute: ${r.reason}`:`PING ${target}: timeout\nReason: ${r.reason}`);
   }else if(n.startsWith("diagnose sniffer packet")){
     const r=evaluateLocalPing("8.8.8.8"),out=r.outgoing||"wan",src=r.source||"0.0.0.0";cli(`interfaces=[any]\nfilters=[simulated]\n0.000000 ${out} out ${src} -> 8.8.8.8: icmp echo request\n0.012400 ${out} in 8.8.8.8 -> ${src}: icmp echo reply`);
   }else if(n==="clear"){$("cli-output").textContent="";}
-  else if(n==="help"||n==="?"){cli("get router info routing-table all\nget system interface physical\ndiagnose ip address list\nexecute ping <ip>\ndiagnose sniffer packet any 'host <ip>' 4 0 l\nclear");}
+  else if(n==="help"||n==="?"){cli("get router info routing-table all\nget system interface physical\ndiagnose ip address list\nshow system dns\nexecute ping <ip-or-hostname>\ndiagnose sniffer packet any 'host <ip>' 4 0 l\nclear");}
   else cli('Command fail. Return code -61\nType "help" for supported simulator commands.');
   cli("");
 }
@@ -432,6 +718,7 @@ function loadState(){
     if(!p.interfaces.some(i=>i.name==="fortilink"))p.interfaces.unshift(structuredClone(defaultState.interfaces[0]));
     if(!p.routes.some(r=>r.interface==="fortilink"&&r.connected))p.routes.push(structuredClone(defaultState.routes[1]));
     p.routes=p.routes.map(r=>({...r,type:r.type||(r.connected?"connected":r.dynamic?"dynamic":"static")}));
+    p.dns=normalizeDns(p.dns);
     return p;
   }catch{return structuredClone(defaultState);}
 }
@@ -452,7 +739,8 @@ function clamp(n,min,max){return Math.max(min,Math.min(max,Number(n)||min));}
 function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");}
 
 if(typeof globalThis!=="undefined") globalThis.__FG_SIM_TEST__={
-  defaultState,normalizeInterface,validateInterface,simulateDhcpAcquire,simulatePppoeConnect,disconnectDynamicInterface,
+  defaultState,baseDns,normalizeDns,validateDns,resolveDnsName,dnsRouteStatus,dnsServersInUse,
+  normalizeInterface,validateInterface,simulateDhcpAcquire,simulatePppoeConnect,disconnectDynamicInterface,
   syncInterfaceRoutes,evaluateTraffic,evaluateLocalPing,findBestRoute,allocateDhcpLease,isIPv4,isValidNetmask,networkAddress,broadcastAddress,cidrContains,
-  getState:()=>state,setState:s=>{state=s;}
+  getState:()=>state,setState:s=>{state=s;ensureDnsState();}
 };
