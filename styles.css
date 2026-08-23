@@ -57,6 +57,28 @@ button:disabled {
   opacity: .48;
 }
 
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+#admin-chip,
+#interface-group-select,
+#interfaces-table-body tr:not(.group-row),
+#routes-table-body tr,
+#policies-table-body tr,
+.interface-ref-button,
+.forti-radio-row label,
+.forti-access-grid label,
+.forti-check,
+.check-row label,
+.forti-switch {
+  cursor: pointer;
+}
+
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 #app-shell {
   min-height: 100vh;
   display: grid;
