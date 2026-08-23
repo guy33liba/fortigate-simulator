@@ -10,6 +10,7 @@ document.write('<script src="vlan-enhancement.js"></script>');
 document.write('<script src="vpn-enhancement.js"></script>');
 document.write('<script src="security-profiles-enhancement.js"></script>');
 document.write('<script src="packet-debug-enhancement.js"></script>');
+document.write('<script src="ssl-vpn-enhancement.js"></script>');
 
 document.addEventListener('DOMContentLoaded', () => {
   const groups = [...document.querySelectorAll('#sidebar-nav .nav-group')];
