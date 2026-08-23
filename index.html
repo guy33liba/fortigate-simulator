@@ -143,51 +143,275 @@
           </div>
 
           <div id="interface-device-strip" class="device-strip">
-            <div id="device-strip-model">
-              <div id="device-mini-logo">▦</div>
-              <div>
-                <strong>FortiWiFi 60E-DSL</strong>
-                <div class="muted">INTERNAL</div>
+            <div id="device-strip-chassis">
+              <div id="device-strip-model">
+                <div id="device-mini-logo">▦</div>
+                <div>
+                  <strong id="device-model-name">FortiWiFi 60E-DSL</strong>
+                  <div id="device-mode-label" class="muted">INTERNAL</div>
+                </div>
               </div>
-            </div>
-            <div id="port-lights" aria-label="Port status">
-              <span class="port-light on">1</span>
-              <span class="port-light on">2</span>
-              <span class="port-light">3</span>
-              <span class="port-light">4</span>
-              <span class="port-light">5</span>
-              <span class="port-light">6</span>
-              <span class="port-light">7</span>
-              <span class="port-light">DMZ</span>
-              <span class="port-light on">WAN</span>
+              <div id="device-port-bank" aria-label="FortiWiFi port status">
+                <span id="port-dsl" class="device-port"><small>DSL</small><b></b></span>
+                <span id="port-1" class="device-port active"><small>1</small><b></b></span>
+                <span id="port-2" class="device-port active"><small>2</small><b></b></span>
+                <span id="port-3" class="device-port"><small>3</small><b></b></span>
+                <span id="port-4" class="device-port"><small>4</small><b></b></span>
+                <span id="port-5" class="device-port"><small>5</small><b></b></span>
+                <span id="port-6" class="device-port"><small>6</small><b></b></span>
+                <span id="port-7" class="device-port"><small>7</small><b></b></span>
+                <span id="port-dmz" class="device-port"><small>DMZ</small><b></b></span>
+                <span id="port-wan" class="device-port active"><small>WAN</small><b></b></span>
+              </div>
+              <div id="device-wifi-mark" aria-hidden="true">)))</div>
             </div>
           </div>
 
           <div id="interfaces-toolbar" class="toolbar">
-            <button id="interface-create-button" class="btn-primary">＋ Create New ▾</button>
+            <div id="interface-create-wrap">
+              <button id="interface-create-button" class="btn-primary" aria-expanded="false" aria-controls="interface-create-menu">＋ Create New ▾</button>
+              <div id="interface-create-menu" hidden>
+                <button id="create-interface-item" type="button" data-create-interface="Interface">Interface</button>
+                <button id="create-vlan-item" type="button" data-create-interface="VLAN">VLAN</button>
+                <button id="create-software-switch-item" type="button" data-create-interface="Software Switch">Software Switch</button>
+                <button id="create-aggregate-item" type="button" data-create-interface="802.3ad Aggregate">802.3ad Aggregate</button>
+                <button id="create-loopback-item" type="button" data-create-interface="Loopback Interface">Loopback Interface</button>
+              </div>
+            </div>
             <button id="interface-edit-button" class="btn-secondary" disabled>✎ Edit</button>
             <button id="interface-delete-button" class="btn-secondary" disabled>▱ Delete</button>
+            <button id="interface-integrate-button" class="btn-secondary" disabled>▶ Integrate Interface</button>
             <div id="toolbar-grow"></div>
-            <input id="interface-search" class="search-input" type="search" placeholder="Search" />
+            <input id="interface-search" class="search-input" type="search" placeholder="Search" aria-label="Search interfaces" />
+            <button id="interface-search-button" class="btn-secondary" aria-label="Search interfaces">⌕</button>
+            <select id="interface-group-select" aria-label="Group interfaces">
+              <option value="type">Group By Type</option>
+              <option value="none">No Grouping</option>
+            </select>
           </div>
 
           <div id="interfaces-table-wrap" class="table-wrap full-table-wrap">
             <table id="interfaces-table" class="data-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Members</th>
-                  <th>IP/Netmask</th>
-                  <th>Administrative Access</th>
-                  <th>DHCP Clients</th>
-                  <th>DHCP Ranges</th>
-                  <th>Ref.</th>
+                  <th id="interfaces-name-heading">Name ↕</th>
+                  <th id="interfaces-type-heading">Type ↕</th>
+                  <th id="interfaces-members-heading">Members ↕</th>
+                  <th id="interfaces-ip-heading">IP/Netmask ↕</th>
+                  <th id="interfaces-access-heading">Administrative Access ↕</th>
+                  <th id="interfaces-clients-heading">DHCP Clients ↕</th>
+                  <th id="interfaces-ranges-heading">DHCP Ranges ↕</th>
+                  <th id="interfaces-ref-heading">Ref. ↕</th>
                 </tr>
               </thead>
               <tbody id="interfaces-table-body"></tbody>
             </table>
           </div>
+          <div id="interfaces-help-line">Select an interface and click <strong>Edit</strong>, or double-click a row. Changes here affect the simulator routing, policies, DHCP and logs.</div>
+        </section>
+
+        <section id="view-interface-editor" class="app-view">
+          <div id="interface-editor-header" class="page-heading-row">
+            <h1 id="interface-editor-title">Edit Interface</h1>
+          </div>
+
+          <form id="interface-editor-form" novalidate>
+            <div id="interface-editor-toolbar">
+              <button id="interface-editor-ok-top" type="submit" class="btn-primary">OK</button>
+              <button id="interface-editor-cancel-top" type="button" class="btn-secondary">Cancel</button>
+            </div>
+
+            <section id="interface-basic-section" class="forti-form-section">
+              <h2 id="interface-basic-title">Interface</h2>
+              <div id="interface-basic-fields" class="forti-form-body">
+                <div id="field-interface-name" class="forti-field-row">
+                  <label id="label-editor-name" for="editor-name">Interface Name</label>
+                  <div id="control-editor-name"><input id="editor-name" type="text" /></div>
+                </div>
+                <div id="field-interface-alias" class="forti-field-row">
+                  <label id="label-editor-alias" for="editor-alias">Alias</label>
+                  <div id="control-editor-alias"><input id="editor-alias" type="text" maxlength="25" /></div>
+                </div>
+                <div id="field-interface-type" class="forti-field-row">
+                  <label id="label-editor-type" for="editor-type">Type</label>
+                  <div id="control-editor-type">
+                    <select id="editor-type">
+                      <option>Physical Interface</option>
+                      <option>VLAN</option>
+                      <option>Software Switch</option>
+                      <option>802.3ad Aggregate</option>
+                      <option>Loopback Interface</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="field-parent-interface" class="forti-field-row" hidden>
+                  <label id="label-editor-parent" for="editor-parent">Interface</label>
+                  <div id="control-editor-parent"><select id="editor-parent"></select></div>
+                </div>
+                <div id="field-vlan-id" class="forti-field-row" hidden>
+                  <label id="label-editor-vlan" for="editor-vlan-id">VLAN ID</label>
+                  <div id="control-editor-vlan"><input id="editor-vlan-id" type="number" min="1" max="4094" value="10" /></div>
+                </div>
+                <div id="field-interface-role" class="forti-field-row">
+                  <label id="label-editor-role" for="editor-role">Role</label>
+                  <div id="control-editor-role">
+                    <select id="editor-role">
+                      <option>LAN</option>
+                      <option>WAN</option>
+                      <option>DMZ</option>
+                      <option>Undefined</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="field-estimated-bandwidth" class="forti-field-row" hidden>
+                  <label id="label-estimated-bandwidth">Estimated bandwidth</label>
+                  <div id="control-estimated-bandwidth" class="inline-controls">
+                    <input id="editor-bandwidth-up" type="number" min="0" placeholder="Upstream" />
+                    <span>Mbps up</span>
+                    <input id="editor-bandwidth-down" type="number" min="0" placeholder="Downstream" />
+                    <span>Mbps down</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="interface-address-section" class="forti-form-section">
+              <h2 id="interface-address-title">Address</h2>
+              <div id="interface-address-fields" class="forti-form-body">
+                <div id="field-addressing-mode" class="forti-field-row">
+                  <label id="label-addressing-mode">Addressing mode</label>
+                  <div id="control-addressing-mode" class="forti-radio-row">
+                    <label id="address-mode-manual-label"><input id="address-mode-manual" type="radio" name="editor-address-mode" value="Manual" checked /> Manual</label>
+                    <label id="address-mode-dhcp-label"><input id="address-mode-dhcp" type="radio" name="editor-address-mode" value="DHCP" /> DHCP</label>
+                    <label id="address-mode-pppoe-label"><input id="address-mode-pppoe" type="radio" name="editor-address-mode" value="PPPoE" /> PPPoE</label>
+                    <label id="address-mode-sniffer-label"><input id="address-mode-sniffer" type="radio" name="editor-address-mode" value="One-Arm Sniffer" /> One-Arm Sniffer</label>
+                  </div>
+                </div>
+                <div id="field-ip-netmask" class="forti-field-row">
+                  <label id="label-editor-ip" for="editor-ip">IP/Netmask</label>
+                  <div id="control-ip-netmask" class="inline-controls">
+                    <input id="editor-ip" type="text" inputmode="decimal" />
+                    <span>/</span>
+                    <input id="editor-mask" type="text" inputmode="decimal" />
+                  </div>
+                </div>
+                <div id="field-dhcp-client" class="forti-field-row" hidden>
+                  <label id="label-dhcp-client">DHCP client</label>
+                  <div id="control-dhcp-client">
+                    <label id="dhcp-default-route-label" class="forti-check"><input id="editor-dhcp-default-route" type="checkbox" checked /> Retrieve default gateway from server</label>
+                    <div id="dhcp-distance-wrap" class="inline-controls"><span>Distance</span><input id="editor-dhcp-distance" type="number" min="1" max="255" value="5" /></div>
+                  </div>
+                </div>
+                <div id="field-pppoe" class="forti-field-row" hidden>
+                  <label id="label-pppoe">PPPoE</label>
+                  <div id="control-pppoe" class="stacked-controls">
+                    <input id="editor-pppoe-user" type="text" placeholder="Username" autocomplete="off" />
+                    <input id="editor-pppoe-pass" type="password" placeholder="Password" autocomplete="new-password" />
+                  </div>
+                </div>
+                <div id="field-create-address" class="forti-field-row">
+                  <label id="label-create-address">Create address object matching subnet</label>
+                  <div id="control-create-address"><label id="create-address-switch" class="forti-switch"><input id="editor-create-address" type="checkbox" /><span></span></label></div>
+                </div>
+                <div id="field-secondary-ip" class="forti-field-row">
+                  <label id="label-secondary-ip">Secondary IP Address</label>
+                  <div id="control-secondary-ip"><label id="secondary-ip-switch" class="forti-switch"><input id="editor-secondary-enabled" type="checkbox" /><span></span></label></div>
+                </div>
+                <div id="field-secondary-ip-values" class="forti-field-row" hidden>
+                  <label id="label-secondary-ip-values" for="editor-secondary-ip">Secondary IP/Netmask</label>
+                  <div id="control-secondary-ip-values" class="inline-controls">
+                    <input id="editor-secondary-ip" type="text" placeholder="192.168.2.1" />
+                    <span>/</span>
+                    <input id="editor-secondary-mask" type="text" placeholder="255.255.255.0" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="interface-admin-section" class="forti-form-section">
+              <h2 id="interface-admin-title">Administrative Access</h2>
+              <div id="interface-admin-fields" class="forti-form-body">
+                <div id="field-ipv4-admin-access" class="forti-field-row">
+                  <label id="label-ipv4-admin-access">IPv4 Administrative Access</label>
+                  <div id="control-ipv4-admin-access" class="forti-access-grid">
+                    <label id="admin-https-label"><input id="admin-https" type="checkbox" value="HTTPS" /> HTTPS</label>
+                    <label id="admin-http-label"><input id="admin-http" type="checkbox" value="HTTP" /> HTTP</label>
+                    <label id="admin-ping-label"><input id="admin-ping" type="checkbox" value="PING" /> PING</label>
+                    <label id="admin-fmg-label"><input id="admin-fmg" type="checkbox" value="FMG-Access" /> FMG-Access</label>
+                    <label id="admin-ssh-label"><input id="admin-ssh" type="checkbox" value="SSH" /> SSH</label>
+                    <label id="admin-snmp-label"><input id="admin-snmp" type="checkbox" value="SNMP" /> SNMP</label>
+                    <label id="admin-ftm-label"><input id="admin-ftm" type="checkbox" value="FTM" /> FTM</label>
+                    <label id="admin-radius-label"><input id="admin-radius" type="checkbox" value="RADIUS Accounting" /> RADIUS Accounting</label>
+                    <label id="admin-fabric-label"><input id="admin-fabric" type="checkbox" value="Security Fabric Connection" /> Security Fabric Connection</label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="interface-dhcp-section" class="forti-form-section">
+              <h2 id="interface-dhcp-title">DHCP Server</h2>
+              <div id="interface-dhcp-fields" class="forti-form-body">
+                <div id="field-dhcp-toggle" class="forti-field-row">
+                  <label id="label-dhcp-toggle">DHCP Server</label>
+                  <div id="control-dhcp-toggle"><label id="dhcp-server-switch" class="forti-switch"><input id="editor-dhcp-enabled" type="checkbox" /><span></span></label></div>
+                </div>
+                <div id="dhcp-settings-block" hidden>
+                  <div id="field-dhcp-range" class="forti-field-row">
+                    <label id="label-dhcp-range">Address Range</label>
+                    <div id="control-dhcp-range" class="inline-controls">
+                      <input id="editor-dhcp-start" type="text" placeholder="192.168.1.50" />
+                      <span>to</span>
+                      <input id="editor-dhcp-end" type="text" placeholder="192.168.1.150" />
+                    </div>
+                  </div>
+                  <div id="field-dhcp-netmask" class="forti-field-row">
+                    <label id="label-dhcp-netmask" for="editor-dhcp-netmask">Netmask</label>
+                    <div id="control-dhcp-netmask"><input id="editor-dhcp-netmask" type="text" /></div>
+                  </div>
+                  <div id="field-dhcp-gateway" class="forti-field-row">
+                    <label id="label-dhcp-gateway" for="editor-dhcp-gateway">Default Gateway</label>
+                    <div id="control-dhcp-gateway"><input id="editor-dhcp-gateway" type="text" /></div>
+                  </div>
+                  <div id="field-dhcp-dns" class="forti-field-row">
+                    <label id="label-dhcp-dns" for="editor-dhcp-dns">DNS Server</label>
+                    <div id="control-dhcp-dns"><select id="editor-dhcp-dns"><option>Same as System DNS</option><option>Same as Interface IP</option><option>Specify</option></select></div>
+                  </div>
+                  <div id="field-dhcp-lease" class="forti-field-row">
+                    <label id="label-dhcp-lease" for="editor-dhcp-lease">Lease Time</label>
+                    <div id="control-dhcp-lease" class="inline-controls"><input id="editor-dhcp-lease" type="number" min="60" value="86400" /><span>seconds</span></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="interface-device-section" class="forti-form-section">
+              <h2 id="interface-device-title">Networked Devices</h2>
+              <div id="interface-device-fields" class="forti-form-body">
+                <div id="field-device-detection" class="forti-field-row">
+                  <label id="label-device-detection">Device Detection</label>
+                  <div id="control-device-detection"><label id="device-detection-switch" class="forti-switch"><input id="editor-device-detection" type="checkbox" /><span></span></label></div>
+                </div>
+              </div>
+            </section>
+
+            <section id="interface-status-section" class="forti-form-section">
+              <h2 id="interface-status-title">Status</h2>
+              <div id="interface-status-fields" class="forti-form-body">
+                <div id="field-interface-status" class="forti-field-row">
+                  <label id="label-interface-status">Status</label>
+                  <div id="control-interface-status"><label id="interface-status-switch" class="forti-switch"><input id="editor-enabled" type="checkbox" checked /><span></span></label></div>
+                </div>
+              </div>
+            </section>
+
+            <div id="interface-editor-warning" hidden>Changing the management interface IP can make the simulated GUI unreachable until you use the new address.</div>
+            <div id="interface-editor-errors" role="alert" aria-live="polite"></div>
+
+            <div id="interface-editor-actions">
+              <button id="interface-editor-ok" type="submit" class="btn-primary">OK</button>
+              <button id="interface-editor-cancel" type="button" class="btn-secondary">Cancel</button>
+            </div>
+          </form>
         </section>
 
         <section id="view-static-routes" class="app-view">
