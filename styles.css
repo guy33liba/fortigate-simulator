@@ -86,7 +86,7 @@ select:disabled {
 #app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 228px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 #sidebar {
@@ -1135,7 +1135,7 @@ select:disabled {
   }
 
   #app-shell {
-    grid-template-columns: 200px minmax(0,1fr);
+    grid-template-columns: 260px minmax(0,1fr);
   }
 }
 
@@ -1148,7 +1148,7 @@ select:disabled {
     position: fixed;
     left: 0;
     top: 0;
-    width: 228px;
+    width: 280px;
     transform: translateX(-100%);
     transition: transform .18s ease;
     z-index: 100;
