@@ -13,13 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     group.classList.toggle('open', open);
     subnav.hidden = !open;
-    /* Inline display is intentional: base FortiOS CSS uses .subnav { display:block },
-       so this guarantees the submenu really collapses when hidden. */
     subnav.style.display = open ? 'block' : 'none';
     parent.setAttribute('aria-expanded', String(open));
 
+    /* FortiOS behavior: down arrow = list visible, right arrow = list hidden. */
     const chevron = parent.querySelector('.nav-chevron');
     if (chevron) chevron.textContent = open ? '⌄' : '›';
+  };
+
+  const isGroupOpen = group => {
+    const subnav = group?.querySelector(':scope > .subnav');
+    return Boolean(subnav && !subnav.hidden && subnav.style.display !== 'none');
   };
 
   const closeOtherGroups = currentGroup => {
@@ -28,21 +32,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  /* FortiOS-style default: all expandable sections start collapsed. */
+  /* Start collapsed. */
   groups.forEach(group => setGroupOpen(group, false));
 
-  /* The existing simulator handlers decide open/closed state.
-     This handler syncs the visual state and makes the sidebar a real accordion. */
+  /* Own the click before older sidebar handlers run, so arrow and list can never get out of sync. */
   groups.forEach(group => {
     const parent = group.querySelector(':scope > .nav-parent');
-    const subnav = group.querySelector(':scope > .subnav');
-    if (!parent || !subnav) return;
+    if (!parent) return;
 
-    parent.addEventListener('click', () => {
-      const willBeOpen = !subnav.hidden;
-      if (willBeOpen) closeOtherGroups(group);
-      setGroupOpen(group, willBeOpen);
-    });
+    parent.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const shouldOpen = !isGroupOpen(group);
+      if (shouldOpen) closeOtherGroups(group);
+      setGroupOpen(group, shouldOpen);
+    }, true);
   });
 
   /* Clicking a normal top-level section closes every dropdown. */
